@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ParkIQ | Smart Parking System & IoT Telemetry</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230891b2'/><text x='50%25' y='68%25' font-size='56' font-weight='900' fill='white' text-anchor='middle' font-family='system-ui,sans-serif'>P</text></svg>">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#ecfeff',
+              100: '#cffafe',
+              400: '#22d3ee',
+              500: '#06b6d4',
+              600: '#0891b2',
+              700: '#0e7490',
+              900: '#164e63',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+            mono: ['JetBrains Mono', 'Menlo', 'Monaco', 'Courier New', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen font-sans selection:bg-cyan-500 selection:text-white antialiased transition-colors duration-300">
+
+  <!-- Top Announcement / Live Telemetry Banner (Light Theme) -->
+  <div class="bg-gradient-to-r from-cyan-50 via-white to-indigo-50 border-b border-slate-200/90 px-4 py-2 text-xs shadow-sm">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center space-x-3">
+        <span class="text-slate-600">Sensor Latency: <span class="text-cyan-700 font-mono font-semibold" id="sensorLatency">12ms</span></span>
+      </div>
+      <div class="flex items-center space-x-4 text-slate-600">
+        <div class="flex items-center space-x-1.5">
+          <span class="text-amber-600 font-mono text-xs">⚡</span>
+          <span>Dynamic Rate: <strong class="text-slate-900 font-mono font-bold" id="dynamicRateDisplay">₹50/hr</strong></span>
+        </div>
+        <div class="hidden sm:flex items-center space-x-1.5">
+          <span class="text-cyan-600">🌡️</span>
+          <span id="tempDisplay" class="font-medium">24°C • Air Quality: Good</span>
+        </div>
+        <div class="flex items-center space-x-1 bg-white px-2 py-0.5 rounded-md border border-slate-200">
+          <span class="w-2 h-2 rounded-full bg-cyan-500 animate-ping"></span>
+          <span class="font-mono text-cyan-800 font-bold" id="liveClock">19:10:00</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Primary Navigation Bar (Light Theme) -->
+  <header class="sticky top-0 z-40 backdrop-blur-xl bg-white/95 border-b border-slate-200 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        
+        <!-- Logo & Branding -->
+        <div class="flex items-center space-x-3 cursor-pointer" onclick="switchMainTab('parking-lot')">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center shadow-md shadow-cyan-600/20 text-white font-black text-xl tracking-wider">
+            P
+          </div>
+          <div>
+            <div class="flex items-center space-x-1.5">
+              <span class="font-black text-lg tracking-tight text-slate-900">Park<span class="text-cyan-600">IQ</span></span>
+              <span class="px-1.5 py-0.5 text-[9px] uppercase font-bold tracking-widest bg-cyan-100 text-cyan-800 border border-cyan-300 rounded">Driver Portal</span>
+            </div>
+            <p class="text-[11px] text-slate-500 font-medium">Live Availability, Fast Booking & EV Hub</p>
+          </div>
+        </div>
+
+        <!-- Navigation Tabs (Driver-Centric) -->
+        <nav class="hidden md:flex items-center space-x-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
+          <button onclick="switchMainTab('parking-lot')" id="tabBtn-parking-lot" class="nav-tab-btn active px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center space-x-2 text-cyan-800 bg-white shadow-sm border border-slate-200">
+            <svg class="w-4 h-4 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"></path></svg>
+            <span>Find a Spot (Map)</span>
+          </button>
+          
+          <button onclick="switchMainTab('reserve')" id="tabBtn-reserve" class="nav-tab-btn px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center space-x-2 text-slate-600 hover:text-slate-900">
+            <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+            <span>Book in Advance</span>
+          </button>
+
+          <button onclick="switchMainTab('find-car')" id="tabBtn-find-car" class="nav-tab-btn px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center space-x-2 text-slate-600 hover:text-slate-900">
+            <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            <span>Locate My Car & Exit</span>
+          </button>
+
+          <button onclick="switchMainTab('pricing')" id="tabBtn-pricing" class="nav-tab-btn px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center space-x-2 text-slate-600 hover:text-slate-900">
+            <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span>Rates & Passes</span>
+          </button>
+
+          <button onclick="switchMainTab('dashboard')" id="tabBtn-dashboard" class="nav-tab-btn px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center space-x-2 text-slate-600 hover:text-slate-900">
+            <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span>Traffic & Peak Hours</span>
+          </button>
+        </nav>
+
+        <!-- Right Action Controls -->
+        <div class="flex items-center space-x-2.5">
+          <!-- Audio FX Toggle -->
+          <button id="soundToggleBtn" onclick="toggleAudio()" class="p-2 rounded-lg bg-slate-100 border border-slate-300 text-slate-700 hover:text-cyan-700 hover:bg-slate-200 transition" title="Toggle System Sound FX">
+            <span id="soundIcon">🔊</span>
+          </button>
+
+          <!-- Theme Toggle (Light / Dark) -->
+          <button id="themeToggleBtn" onclick="toggleTheme()" class="p-2 rounded-lg bg-slate-100 border border-slate-300 text-slate-700 hover:text-amber-600 hover:bg-slate-200 transition" title="Toggle Light/Dark Theme">
+            <span id="themeIcon">☀️</span>
+          </button>
+
+          <!-- Simulation Quick Trigger Pill -->
+          <div class="flex items-center bg-slate-100 rounded-lg border border-slate-300 p-0.5">
+            <button id="simToggleBtn" onclick="toggleAutoSimulation()" class="px-2.5 py-1.5 rounded-md text-xs font-semibold flex items-center space-x-1.5 bg-white text-slate-700 border border-slate-200 shadow-sm transition">
+              <span id="simLed" class="w-2 h-2 rounded-full bg-slate-400"></span>
+              <span id="simBtnLabel">Sim Off</span>
+            </button>
+            <button onclick="triggerQuickCarEntry()" class="px-2 py-1.5 text-xs text-cyan-700 hover:text-cyan-800 font-bold border-l border-slate-300" title="Simulate Next Car In">
+              + Car In
+            </button>
+            <button onclick="triggerQuickCarExit()" class="px-2 py-1.5 text-xs text-rose-600 hover:text-rose-700 font-bold border-l border-slate-300" title="Simulate Random Car Out">
+              - Car Out
+            </button>
+          </div>
+
+          <!-- Quick Book CTA Button -->
+          <button onclick="openSmartBookingModal()" class="hidden sm:inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold bg-cyan-600 hover:bg-cyan-500 text-white shadow-md shadow-cyan-600/20 transition transform active:scale-95">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+            <span>Quick Book</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Mobile Navigation Bar -->
+    <div class="md:hidden flex items-center justify-around bg-white border-t border-slate-200 py-2 px-2 overflow-x-auto text-[11px] shadow-sm">
+      <button onclick="switchMainTab('parking-lot')" class="mobile-tab-btn flex flex-col items-center py-1 px-2 text-cyan-700 font-bold" data-tab="parking-lot">
+        <span>🅿️ Spots</span>
+      </button>
+      <button onclick="switchMainTab('reserve')" class="mobile-tab-btn flex flex-col items-center py-1 px-2 text-slate-600 font-medium" data-tab="reserve">
+        <span>📅 Book</span>
+      </button>
+      <button onclick="switchMainTab('find-car')" class="mobile-tab-btn flex flex-col items-center py-1 px-2 text-slate-600 font-medium" data-tab="find-car">
+        <span>🔍 Find Car</span>
+      </button>
+      <button onclick="switchMainTab('pricing')" class="mobile-tab-btn flex flex-col items-center py-1 px-2 text-slate-600 font-medium" data-tab="pricing">
+        <span>💳 Rates</span>
+      </button>
+      <button onclick="switchMainTab('dashboard')" class="mobile-tab-btn flex flex-col items-center py-1 px-2 text-slate-600 font-medium" data-tab="dashboard">
+        <span>🕒 Traffic</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+    <!-- KPI Metric Cards Header (Light Theme with Rupee Values) -->
+    <section class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3.5">
+      <!-- Total Capacity -->
+      <div class="kpi-card bg-white border border-slate-200 rounded-2xl p-4 relative overflow-hidden shadow-sm hover:shadow transition">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Capacity</span>
+          <span class="p-1.5 bg-slate-100 rounded-lg text-slate-600 text-xs">🚗</span>
+        </div>
+        <div class="mt-2 flex items-baseline justify-between">
+          <span class="text-2xl font-black text-slate-900 font-mono" id="statTotalSpots">30</span>
+          <span class="text-[10px] text-slate-500 font-mono font-medium">Single Level</span>
+        </div>
+        <div class="mt-2.5 w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+          <div class="bg-slate-400 h-full w-full"></div>
+        </div>
+      </div>
+
+      <!-- Available Spots -->
+      <div class="kpi-card bg-emerald-50/60 border border-emerald-200 rounded-2xl p-4 relative overflow-hidden shadow-sm hover:shadow transition">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-emerald-800 uppercase tracking-wider">Available Free</span>
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+        </div>
+        <div class="mt-2 flex items-baseline justify-between">
+          <span class="text-2xl font-black text-emerald-700 font-mono" id="statAvailableSpots">--</span>
+          <span class="text-[10px] text-emerald-800 font-bold uppercase tracking-wider" id="statAvailablePct">--%</span>
+        </div>
+        <div class="mt-2.5 w-full bg-emerald-100 h-1.5 rounded-full overflow-hidden">
+          <div id="statAvailableBar" class="bg-emerald-500 h-full transition-all duration-500" style="width: 40%"></div>
+        </div>
+      </div>
+
+      <!-- Occupied Spots -->
+      <div class="kpi-card bg-rose-50/60 border border-rose-200 rounded-2xl p-4 relative overflow-hidden shadow-sm hover:shadow transition">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-rose-800 uppercase tracking-wider">Occupied</span>
+          <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+        </div>
+        <div class="mt-2 flex items-baseline justify-between">
+          <span class="text-2xl font-black text-rose-700 font-mono" id="statOccupiedSpots">--</span>
+          <span class="text-[10px] text-rose-800 font-mono font-semibold" id="statOccupiedPct">--%</span>
+        </div>
+        <div class="mt-2.5 w-full bg-rose-100 h-1.5 rounded-full overflow-hidden">
+          <div id="statOccupiedBar" class="bg-rose-500 h-full transition-all duration-500" style="width: 50%"></div>
+        </div>
+      </div>
+
+      <!-- EV Fast Charging -->
+      <div class="kpi-card bg-cyan-50/60 border border-cyan-200 rounded-2xl p-4 relative overflow-hidden shadow-sm hover:shadow transition">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-cyan-800 uppercase tracking-wider">EV Charging Hub</span>
+          <span class="text-xs text-cyan-600">⚡</span>
+        </div>
+        <div class="mt-2 flex items-baseline justify-between">
+          <span class="text-2xl font-black text-cyan-700 font-mono" id="statEVCount">--</span>
+          <span class="text-[10px] text-cyan-800 font-mono font-semibold" id="statEVRate">10 Stalls</span>
+        </div>
+        <div class="mt-2.5 w-full bg-cyan-100 h-1.5 rounded-full overflow-hidden">
+          <div id="statEVBar" class="bg-cyan-500 h-full transition-all duration-500" style="width: 70%"></div>
+        </div>
+      </div>
+
+      <!-- Current Dynamic Hourly Rate (User-Centric) -->
+      <div class="kpi-card col-span-2 sm:col-span-1 bg-amber-50/60 border border-amber-200 rounded-2xl p-4 relative overflow-hidden shadow-sm hover:shadow transition">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-amber-900 uppercase tracking-wider">Current Rate</span>
+          <span class="text-xs font-bold text-amber-600">🏷️</span>
+        </div>
+        <div class="mt-2 flex items-baseline justify-between">
+          <span class="text-2xl font-black text-amber-800 font-mono" id="statCurrentRate">₹50/hr</span>
+          <span class="text-[10px] text-emerald-700 font-mono font-bold">15m Free Grace</span>
+        </div>
+        <div class="mt-2.5 w-full bg-amber-100 h-1.5 rounded-full overflow-hidden">
+          <div class="bg-amber-500 h-full transition-all duration-500" style="width: 60%"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 1: LIVE PARKING LOT GRID (DEFAULT VIEW) -->
+    <div id="tab-parking-lot" class="main-tab-content space-y-5">
+      
+      <!-- Controls Toolbar: Floor Switcher, Filters, Simulation Bar -->
+      <div class="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col lg:flex-row items-center justify-between gap-4 shadow-sm">
+        
+        <!-- Floor Indicator & Quick Driver Finder -->
+        <div class="flex items-center space-x-2.5">
+          <span class="px-3.5 py-2 rounded-xl text-xs font-bold flex items-center space-x-2 bg-slate-100 text-slate-800 border border-slate-300">
+            <span>🅿️ Ground Level Lot</span>
+            <span class="text-[10px] py-0.5 px-1.5 rounded bg-slate-200 text-slate-700 font-mono font-bold">30 Stalls</span>
+          </span>
+          <button onclick="autoSelectBestFreeSpot()" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-sm flex items-center space-x-1.5 transition transform active:scale-95">
+            <span>🚀 Auto-Find Best Free Spot</span>
+          </button>
+        </div>
+
+        <!-- Filter Tags -->
+        <div class="flex items-center space-x-1.5 w-full lg:w-auto overflow-x-auto text-xs">
+          <button onclick="setSpotFilter('all')" id="filterBtn-all" class="filter-chip active px-3 py-1.5 rounded-lg font-bold bg-cyan-50 text-cyan-800 border border-cyan-300">
+            All (30)
+          </button>
+          <button onclick="setSpotFilter('available')" id="filterBtn-available" class="filter-chip px-3 py-1.5 rounded-lg font-medium bg-slate-100 text-slate-600 border border-slate-200 hover:text-slate-900">
+            🟢 Free
+          </button>
+          <button onclick="setSpotFilter('ev')" id="filterBtn-ev" class="filter-chip px-3 py-1.5 rounded-lg font-medium bg-slate-100 text-slate-600 border border-slate-200 hover:text-slate-900">
+            ⚡ EV Chargers
+          </button>
+          <button onclick="setSpotFilter('accessible')" id="filterBtn-accessible" class="filter-chip px-3 py-1.5 rounded-lg font-medium bg-slate-100 text-slate-600 border border-slate-200 hover:text-slate-900">
+            ♿ Accessible
+          </button>
+          <button onclick="setSpotFilter('vip')" id="filterBtn-vip" class="filter-chip px-3 py-1.5 rounded-lg font-medium bg-slate-100 text-slate-600 border border-slate-200 hover:text-slate-900">
+            ⭐ VIP
+          </button>
+        </div>
+
+        <!-- Legend -->
+        <div class="flex items-center space-x-3 text-[11px] text-slate-600 font-medium">
+          <div class="flex items-center space-x-1.5">
+            <span class="w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-emerald-200"></span>
+            <span>Free</span>
+          </div>
+          <div class="flex items-center space-x-1.5">
+            <span class="w-3 h-3 rounded-full bg-rose-500"></span>
+            <span>Occupied</span>
+          </div>
+          <div class="flex items-center space-x-1.5">
+            <span class="w-3 h-3 rounded-full bg-amber-500"></span>
+            <span>Reserved</span>
+          </div>
+          <div class="flex items-center space-x-1.5">
+            <span class="w-3 h-3 rounded-full bg-cyan-500 ring-2 ring-cyan-200"></span>
+            <span>EV Active</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Interactive Parking Lot Visualization Stage -->
+      <div class="relative bg-white border border-slate-200 rounded-3xl p-6 lg:p-8 shadow-md overflow-hidden">
+        
+        <!-- Floor Plan Architectural Header -->
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 border-b border-slate-200 gap-3">
+          <div>
+            <div class="flex items-center space-x-3">
+              <h2 class="text-xl font-black tracking-tight text-slate-900 flex items-center space-x-2">
+                <span id="currentFloorTitle">Ground Level Parking Matrix</span>
+              </h2>
+              <span class="text-xs px-2.5 py-0.5 rounded-full bg-cyan-100 text-cyan-800 border border-cyan-300 font-mono font-semibold">
+                Live Sensor Feed
+              </span>
+            </div>
+            <p class="text-xs text-slate-500 mt-0.5">Click any stall for details, live sensor telemetry, reservation, or release.</p>
+          </div>
+
+          <!-- Gates Status Pills -->
+          <div class="flex items-center space-x-3">
+            <div class="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+              <span class="text-slate-500 font-medium">Gate 1 (Entry):</span>
+              <span id="gate1Status" class="font-mono font-bold text-emerald-600 flex items-center">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 animate-pulse"></span>
+                READY
+              </span>
+            </div>
+            <div class="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+              <span class="text-slate-500 font-medium">Gate 2 (Exit):</span>
+              <span id="gate2Status" class="font-mono font-bold text-cyan-700">
+                ACTIVE
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Wayfinding Path Overlay Container (For Find My Car) -->
+        <div id="navigationBanner" class="hidden my-4 p-4 rounded-2xl bg-cyan-50 border border-cyan-300 text-cyan-900 text-xs flex items-center justify-between animate-fadeIn shadow-sm">
+          <div class="flex items-center space-x-3">
+            <span class="text-xl">🧭</span>
+            <div>
+              <strong class="font-bold text-slate-900" id="navBannerPlate">Vehicle Located!</strong>
+              <p class="text-cyan-800" id="navBannerDirections">Follow lane markings from Elevator A -> Bay (Approx 20 meters, 30s walk).</p>
+            </div>
+          </div>
+          <button onclick="dismissNavigation()" class="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg font-bold shadow-sm">
+            Clear Path
+          </button>
+        </div>
+
+        <!-- Parking Lot Matrix / Road Grid -->
+        <div class="mt-6 space-y-8">
+          
+          <!-- Entrance & Drive Lane Indicator -->
+          <div class="flex items-center justify-between text-xs font-mono text-slate-500 px-4">
+            <div class="flex items-center space-x-2 text-emerald-700 bg-emerald-50 px-3 py-1 rounded-md border border-emerald-200 font-semibold">
+              <span>➡ ENTRY GATE 1 (ANPR Scanner)</span>
+            </div>
+            <div class="hidden md:flex items-center space-x-4 text-slate-400 font-medium">
+              <span>▲ SPEED LIMIT 10 KM/H</span>
+              <span>•</span>
+              <span>PEDESTRIAN CROSSING CLEAR</span>
+            </div>
+            <div class="flex items-center space-x-2 text-rose-700 bg-rose-50 px-3 py-1 rounded-md border border-rose-200 font-semibold">
+              <span>EXIT GATE 2 (BOOM BARRIER) ➡</span>
+            </div>
+          </div>
+
+          <!-- Parking Bay Section: Zone 1 (Upper Row) -->
+          <div class="relative">
+            <div class="text-[11px] font-extrabold tracking-wider text-slate-600 uppercase mb-2.5 flex items-center justify-between">
+              <span id="zone1Label">ZONE A (Stalls 01 - 12)</span>
+              <span class="text-slate-400 font-mono text-[10px]">Head-in Parking</span>
+            </div>
+            
+            <!-- Grid of stalls -->
+            <div id="gridRow1" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3 sm:gap-3.5">
+              <!-- Dynamically populated via JS -->
+            </div>
+          </div>
+
+          <!-- Central Driveway / Driving Lane Simulation (Clean Light Pavement) -->
+          <div class="drive-lane h-16 sm:h-20 bg-slate-100 rounded-2xl border-y-2 border-dashed border-amber-400 flex items-center justify-between px-6 relative overflow-hidden shadow-inner">
+            <div class="absolute inset-0 bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:16px_16px] opacity-70"></div>
+            
+            <div class="z-10 flex items-center space-x-4 text-xs font-mono font-bold text-amber-700">
+              <span class="tracking-widest">DRIVEWAY ◀ LANE 1 ◀ ONE WAY</span>
+            </div>
+            
+            <!-- Moving simulation car indicator if active -->
+            <div id="drivewayMovingCar" class="hidden absolute flex items-center space-x-2 bg-cyan-600 text-white px-2.5 py-1 rounded-full font-mono text-[10px] font-bold shadow-md transition-all duration-1000">
+              <span>🚗</span>
+              <span id="movingCarPlate">DL 01 AB 1234</span>
+            </div>
+
+            <!-- Pedestrian & Elevator access point -->
+            <div class="z-10 flex items-center space-x-2 bg-white px-3 py-1.5 rounded-xl border border-slate-300 text-slate-700 font-medium text-xs shadow-sm">
+              <span>🛗 Elevator & Stairs A</span>
+              <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+            </div>
+          </div>
+
+          <!-- Parking Bay Section: Zone 2 (Lower Row) -->
+          <div class="relative">
+            <div class="text-[11px] font-extrabold tracking-wider text-slate-600 uppercase mb-2.5 flex items-center justify-between">
+              <span id="zone2Label">ZONE B (Stalls 13 - 24)</span>
+              <span class="text-slate-400 font-mono text-[10px]">Back-in / Drive-through</span>
+            </div>
+            
+            <!-- Grid of stalls -->
+            <div id="gridRow2" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3 sm:gap-3.5">
+              <!-- Dynamically populated via JS -->
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Simulation Quick Action Floating Footer inside the map -->
+        <div class="mt-8 pt-4 border-t border-slate-200 flex flex-wrap items-center justify-between gap-4 text-xs">
+          <div class="flex items-center space-x-2">
+            <span class="text-slate-600 font-semibold">IoT Sensor Mesh Status:</span>
+            <span class="inline-flex items-center text-emerald-700 font-mono font-bold">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 mr-1.5"></span>
+              All 30 Ultrasonic Nodes Online (100%)
+            </span>
+          </div>
+
+          <div class="flex items-center space-x-2">
+            <button onclick="triggerRushHour()" class="px-3.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold transition flex items-center space-x-1.5 border border-slate-300 shadow-sm">
+              <span>⚡ Rush Hour Surge</span>
+            </button>
+            <button onclick="resetLotOccupancy()" class="px-3.5 py-1.5 rounded-lg bg-slate-100 hover:bg-rose-50 hover:text-rose-700 text-slate-600 font-semibold transition border border-slate-300 shadow-sm">
+              🔄 Reset Lot
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Feature Highlight Row (Under map) -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+        <div class="bg-white border border-slate-200 p-5 rounded-2xl flex items-start space-x-3.5 shadow-sm">
+          <div class="p-2.5 bg-cyan-100 rounded-xl text-cyan-700 text-xl font-bold">⚡</div>
+          <div>
+            <h3 class="font-bold text-sm text-slate-900">Smart EV Charging Telemetry</h3>
+            <p class="text-xs text-slate-500 mt-1">Real-time kWh telemetry, battery level tracking, and automated un-dock alerts.</p>
+          </div>
+        </div>
+
+        <div class="bg-white border border-slate-200 p-5 rounded-2xl flex items-start space-x-3.5 shadow-sm">
+          <div class="p-2.5 bg-emerald-100 rounded-xl text-emerald-700 text-xl font-bold">📷</div>
+          <div>
+            <h3 class="font-bold text-sm text-slate-900">ANPR Gate Camera OCR</h3>
+            <p class="text-xs text-slate-500 mt-1">Contactless entry with neural license plate recognition and automatic gate lifts.</p>
+          </div>
+        </div>
+
+        <div class="bg-white border border-slate-200 p-5 rounded-2xl flex items-start space-x-3.5 shadow-sm">
+          <div class="p-2.5 bg-indigo-100 rounded-xl text-indigo-700 text-xl font-bold">📱</div>
+          <div>
+            <h3 class="font-bold text-sm text-slate-900">Digital Pass & UPI QR Ticket</h3>
+            <p class="text-xs text-slate-500 mt-1">Instant digital ticket pass with indoor walking navigation straight to your vehicle.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- TAB 2: BOOK / RESERVE A SPOT (Rupees) -->
+    <div id="tab-reserve" class="main-tab-content hidden space-y-6">
+      <div class="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 max-w-4xl mx-auto shadow-md">
+        
+        <div class="border-b border-slate-200 pb-5">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-2xl font-black text-slate-900 tracking-tight">Reserve a Smart Parking Spot</h2>
+              <p class="text-sm text-slate-500 mt-1">Guarantee your spot in advance with automated sensor hold and discounted hourly rates in ₹ Rupees.</p>
+            </div>
+            <span class="px-3 py-1 rounded-full bg-cyan-100 text-cyan-800 text-xs font-bold border border-cyan-300">
+              Guaranteed Entry
+            </span>
+          </div>
+        </div>
+
+        <!-- Reservation Form Steps -->
+        <form id="reservationForm" onsubmit="handleReservationSubmit(event)" class="mt-6 space-y-6">
+          
+          <!-- Step 1: Vehicle Details -->
+          <div>
+            <label class="block text-xs font-extrabold uppercase tracking-wider text-slate-700 mb-2">
+              1. Vehicle Information
+            </label>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label class="text-xs text-slate-600 font-semibold block mb-1">License Plate Number *</label>
+                <input type="text" id="resPlateInput" required placeholder="e.g. MH 02 CK 9021" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 font-mono uppercase focus:outline-none focus:border-cyan-600 focus:bg-white">
+              </div>
+              <div>
+                <label class="text-xs text-slate-600 font-semibold block mb-1">Vehicle Make & Model</label>
+                <input type="text" id="resModelInput" placeholder="e.g. Tata Nexon EV / Hyundai Creta" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-cyan-600 focus:bg-white">
+              </div>
+              <div>
+                <label class="text-xs text-slate-600 font-semibold block mb-1">Vehicle Category</label>
+                <select id="resCategorySelect" onchange="updateReservationSummary()" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-cyan-600 focus:bg-white">
+                  <option value="standard">Standard Sedan / Hatchback</option>
+                  <option value="suv">SUV / MUV</option>
+                  <option value="ev">Electric Vehicle (Needs Fast Charger)</option>
+                  <option value="compact">Compact / Two-Wheeler</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 2: Date, Time & Duration -->
+          <div>
+            <label class="block text-xs font-extrabold uppercase tracking-wider text-slate-700 mb-2">
+              2. Parking Schedule & Duration
+            </label>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label class="text-xs text-slate-600 font-semibold block mb-1">Entry Date</label>
+                <input type="date" id="resDateInput" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-cyan-600 focus:bg-white">
+              </div>
+              <div>
+                <label class="text-xs text-slate-600 font-semibold block mb-1">Expected Arrival Time</label>
+                <input type="time" id="resTimeInput" value="19:00" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-cyan-600 focus:bg-white">
+              </div>
+              <div>
+                <label class="text-xs text-slate-600 font-semibold block mb-1">Duration (<span id="durationValDisplay" class="font-bold text-cyan-700">2</span> hours)</label>
+                <input type="range" id="resDurationSlider" min="1" max="12" value="2" oninput="handleDurationChange(this.value)" class="w-full accent-cyan-600 mt-2">
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 3: Spot Preference -->
+          <div>
+            <label class="block text-xs font-extrabold uppercase tracking-wider text-slate-700 mb-2">
+              3. Parking Bay Selection
+            </label>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                <div>
+                  <h4 class="font-bold text-sm text-slate-900">Smart Auto-Assign (Recommended)</h4>
+                  <p class="text-xs text-slate-500 mt-0.5">Algorithm picks the closest stall to the elevator matching your car type.</p>
+                </div>
+                <input type="radio" name="spotPickMode" value="auto" checked onchange="toggleSpotPickMode('auto')" class="accent-cyan-600 w-4 h-4">
+              </div>
+
+              <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                <div>
+                  <h4 class="font-bold text-sm text-slate-900">Select Specific Bay</h4>
+                  <p class="text-xs text-slate-500 mt-0.5" id="selectedBayName">Currently: Auto Optimal</p>
+                </div>
+                <div class="flex items-center space-x-2">
+                  <select id="manualBaySelect" onchange="handleManualBaySelect(this.value)" class="bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-xs text-slate-800 font-semibold">
+                    <!-- Populated dynamically -->
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 4: Premium Smart Add-ons (Rupees) -->
+          <div>
+            <label class="block text-xs font-extrabold uppercase tracking-wider text-slate-700 mb-2">
+              4. Smart Add-ons (Optional)
+            </label>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <label class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 hover:border-slate-300 flex items-center space-x-3 cursor-pointer">
+                <input type="checkbox" id="addonEV" onchange="updateReservationSummary()" class="accent-cyan-600 rounded w-4 h-4">
+                <div>
+                  <div class="text-xs font-bold text-slate-900 flex items-center space-x-1">
+                    <span>⚡ 350kW Fast Charge</span>
+                    <span class="text-cyan-700 font-mono font-bold">+₹150</span>
+                  </div>
+                  <p class="text-[11px] text-slate-500">Up to 80% charge</p>
+                </div>
+              </label>
+
+              <label class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 hover:border-slate-300 flex items-center space-x-3 cursor-pointer">
+                <input type="checkbox" id="addonWash" onchange="updateReservationSummary()" class="accent-cyan-600 rounded w-4 h-4">
+                <div>
+                  <div class="text-xs font-bold text-slate-900 flex items-center space-x-1">
+                    <span>🧼 Eco Foam Wash</span>
+                    <span class="text-cyan-700 font-mono font-bold">+₹250</span>
+                  </div>
+                  <p class="text-[11px] text-slate-500">Exterior hand polish</p>
+                </div>
+              </label>
+
+              <label class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 hover:border-slate-300 flex items-center space-x-3 cursor-pointer">
+                <input type="checkbox" id="addonCover" onchange="updateReservationSummary()" class="accent-cyan-600 rounded w-4 h-4">
+                <div>
+                  <div class="text-xs font-bold text-slate-900 flex items-center space-x-1">
+                    <span>🛡️ Prime Spot Guarantee</span>
+                    <span class="text-cyan-700 font-mono font-bold">+₹50</span>
+                  </div>
+                  <p class="text-[11px] text-slate-500">Reserved barrier lock</p>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Total Calculation & Confirmation in Rupees -->
+          <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <span class="text-xs text-slate-500 font-semibold">Estimated Total (Inclusive of GST & Sensor Hold)</span>
+              <div class="flex items-baseline space-x-3 mt-1">
+                <span class="text-3xl font-black text-slate-900 font-mono" id="reservationTotalPrice">₹100</span>
+                <span class="text-xs text-emerald-700 font-bold">Instant UPI & Card Refund if cancelled</span>
+              </div>
+            </div>
+
+            <button type="submit" class="w-full sm:w-auto px-6 py-3 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-extrabold text-sm shadow-lg shadow-cyan-600/20 transition transform active:scale-95 flex items-center justify-center space-x-2">
+              <span>Confirm & Generate Digital Pass</span>
+              <span>🎟️</span>
+            </button>
+          </div>
+
+        </form>
+
+      </div>
+    </div>
+
+    <!-- TAB 3: FIND MY CAR / INDOOR LOCATOR -->
+    <div id="tab-find-car" class="main-tab-content hidden space-y-6">
+      <div class="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 max-w-3xl mx-auto shadow-md">
+        
+        <div class="text-center max-w-lg mx-auto">
+          <div class="w-12 h-12 bg-cyan-100 text-cyan-700 rounded-2xl flex items-center justify-center mx-auto text-2xl mb-3">
+            🔍
+          </div>
+          <h2 class="text-2xl font-black text-slate-900 tracking-tight">Smart Vehicle Locator</h2>
+          <p class="text-xs text-slate-500 mt-1">
+            Can't remember where you parked? Enter your license plate number to trace your car's exact bay and get turn-by-turn walking directions.
+          </p>
+        </div>
+
+        <!-- Search Box -->
+        <div class="mt-6 flex flex-col sm:flex-row items-center gap-3">
+          <div class="relative w-full">
+            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 text-sm">
+              🚗
+            </span>
+            <input type="text" id="findCarPlateInput" placeholder="Enter License Plate (e.g. MH 02 CK 9021)" class="w-full bg-slate-50 border border-slate-300 rounded-xl pl-10 pr-4 py-3 text-sm text-slate-900 font-mono uppercase focus:outline-none focus:border-cyan-600 focus:bg-white">
+          </div>
+          <button onclick="searchCarLocation()" class="w-full sm:w-auto px-6 py-3 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-sm transition shadow-md shadow-cyan-600/20 whitespace-nowrap">
+            Locate Car
+          </button>
+        </div>
+
+        <!-- Demo Clickable Quick Plates -->
+        <div class="mt-3 text-xs text-slate-600 flex items-center flex-wrap gap-2">
+          <span>Quick test plates:</span>
+          <div id="quickPlateChips" class="flex flex-wrap gap-1.5">
+            <!-- Filled dynamically -->
+          </div>
+        </div>
+
+        <!-- Result Box (Hidden by default) -->
+        <div id="findCarResultCard" class="hidden mt-6 p-6 rounded-2xl bg-cyan-50/70 border border-cyan-300 space-y-4 animate-fadeIn shadow-sm">
+          <div class="flex items-start justify-between">
+            <div class="flex items-center space-x-3">
+              <div class="w-12 h-12 rounded-xl bg-cyan-100 text-cyan-800 flex items-center justify-center text-2xl font-mono">
+                🅿️
+              </div>
+              <div>
+                <span class="text-xs font-mono text-cyan-800 uppercase font-bold">Vehicle Located</span>
+                <h3 class="text-xl font-black text-slate-900 font-mono" id="foundPlateDisplay">MH 02 CK 9021</h3>
+                <p class="text-xs text-slate-600 font-medium" id="foundModelDisplay">Tata Nexon EV • Glacier White</p>
+              </div>
+            </div>
+
+            <div class="text-right">
+              <span class="text-xs text-slate-500 font-semibold block">Designated Bay</span>
+              <span class="text-2xl font-black text-cyan-800 font-mono" id="foundSpotId">A-04</span>
+            </div>
+          </div>
+
+          <!-- Location Details Grid -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 border-t border-cyan-200 text-xs">
+            <div>
+              <span class="text-slate-500 block">Level / Floor</span>
+              <strong class="text-slate-900" id="foundFloor">Ground Floor</strong>
+            </div>
+            <div>
+              <span class="text-slate-500 block">Zone & Column</span>
+              <strong class="text-slate-900" id="foundZone">Zone A • Pillar 3</strong>
+            </div>
+            <div>
+              <span class="text-slate-500 block">Time Parked</span>
+              <strong class="text-slate-900" id="foundTimeParked">1h 24m</strong>
+            </div>
+            <div>
+              <span class="text-slate-500 block">Current Bill</span>
+              <strong class="text-emerald-700 font-mono font-bold text-sm" id="foundCurrentBill">₹125.00</strong>
+            </div>
+          </div>
+
+          <!-- Walking Wayfinding Guidance -->
+          <div class="bg-white p-4 rounded-xl border border-cyan-200">
+            <div class="flex items-center space-x-2 text-xs font-bold text-cyan-900 mb-2">
+              <span>🚶 Turn-by-Turn Indoor Wayfinding:</span>
+            </div>
+            <ol class="text-xs text-slate-700 space-y-1.5 list-decimal list-inside font-medium" id="foundStepDirections">
+              <li>Head towards Elevator & Stairwell Lobby A.</li>
+              <li>Follow the Lane 1 marked pedestrian walkway.</li>
+              <li>Walk 15 meters along the marked pedestrian pathway.</li>
+              <li>Your car is parked in stall A-04 on the left side.</li>
+            </ol>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex items-center justify-between pt-2">
+            <button onclick="highlightOnMapFromFind()" class="px-4 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-800 border border-slate-300 text-xs font-bold transition shadow-sm">
+              View on Grid Map 🗺️
+            </button>
+            <button onclick="openPayAndExitModal()" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition shadow-md shadow-emerald-600/20">
+              Pay via UPI / Card & Exit 💳
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TAB 4: TRAFFIC & PEAK HOURS (USER-CENTRIC) -->
+    <div id="tab-dashboard" class="main-tab-content hidden space-y-6">
+      
+      <!-- Top Row: Driver Traffic & Amenities -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Live Occupancy Chart (24h Trend) -->
+        <div class="lg:col-span-2 bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="font-bold text-base text-slate-900">24-Hour Traffic & Parking Busyness Curve</h3>
+              <p class="text-xs text-slate-500">Plan ahead: Best availability is before 11:30 AM & after 7:00 PM</p>
+            </div>
+            <span class="text-xs font-mono px-2.5 py-1 bg-emerald-50 text-emerald-800 rounded-lg font-bold border border-emerald-200">
+              Off-Peak Right Now
+            </span>
+          </div>
+
+          <!-- SVG Chart Container -->
+          <div class="relative h-56 w-full pt-2">
+            <svg id="occupancyChartSvg" class="w-full h-full overflow-visible" viewBox="0 0 600 200" preserveAspectRatio="none">
+              <!-- Grid lines -->
+              <line x1="0" y1="40" x2="600" y2="40" stroke="#e2e8f0" stroke-dasharray="3 3" stroke-width="1"/>
+              <line x1="0" y1="90" x2="600" y2="90" stroke="#e2e8f0" stroke-dasharray="3 3" stroke-width="1"/>
+              <line x1="0" y1="140" x2="600" y2="140" stroke="#e2e8f0" stroke-dasharray="3 3" stroke-width="1"/>
+              
+              <!-- Gradient fill -->
+              <defs>
+                <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#0284c7" stop-opacity="0.35"/>
+                  <stop offset="100%" stop-color="#0284c7" stop-opacity="0.0"/>
+                </linearGradient>
+              </defs>
+
+              <!-- Filled Area -->
+              <path id="chartAreaPath" d="M 0,160 Q 150,180 250,70 T 450,50 T 600,100 L 600,200 L 0,200 Z" fill="url(#chartGrad)"/>
+              
+              <!-- Spline Line -->
+              <path id="chartLinePath" d="M 0,160 Q 150,180 250,70 T 450,50 T 600,100" fill="none" stroke="#0284c7" stroke-width="3.5" stroke-linecap="round"/>
+              
+              <!-- Real-time current time point dot -->
+              <circle cx="450" cy="50" r="5.5" fill="#0284c7" stroke="#ffffff" stroke-width="2.5" class="animate-pulse"/>
+            </svg>
+            <div class="flex justify-between text-[10px] text-slate-500 font-mono font-semibold mt-2">
+              <span>00:00</span>
+              <span>04:00</span>
+              <span>08:00</span>
+              <span>12:00</span>
+              <span>16:00</span>
+              <span>20:00</span>
+              <span>24:00</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Driver Amenities & Facility Features -->
+        <div class="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-4">
+          <h3 class="font-bold text-base text-slate-900">Facility Amenities & Services</h3>
+          
+          <div class="space-y-3 text-xs">
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+              <div>
+                <strong class="text-slate-900 block">⚡ 350kW DC EV Superchargers</strong>
+                <span class="text-slate-500 text-[11px]">4 Dedicated Bays • CCS2 & Type-2</span>
+              </div>
+              <span class="text-cyan-800 font-mono font-bold bg-cyan-100 px-2 py-0.5 rounded">AVAILABLE</span>
+            </div>
+
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+              <div>
+                <strong class="text-slate-900 block">📷 Contactless FASTag Entry</strong>
+                <span class="text-slate-500 text-[11px]">Drive through without stopping</span>
+              </div>
+              <span class="text-emerald-700 font-mono font-bold bg-emerald-100 px-2 py-0.5 rounded">FAST PASS</span>
+            </div>
+
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+              <div>
+                <strong class="text-slate-900 block">🛡️ 24/7 Monitored CCTV</strong>
+                <span class="text-slate-500 text-[11px]">Surveillance & On-site Security</span>
+              </div>
+              <span class="text-emerald-700 font-mono font-bold bg-emerald-100 px-2 py-0.5 rounded">SECURE</span>
+            </div>
+
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+              <div>
+                <strong class="text-slate-900 block">🛞 Free Tire Air & Wash Point</strong>
+                <span class="text-slate-500 text-[11px]">Near Exit Gate 2 • Self-Serve</span>
+              </div>
+              <span class="text-emerald-700 font-mono font-bold bg-emerald-100 px-2 py-0.5 rounded">FREE</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Live Event Stream & Log -->
+      <div class="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-200">
+          <div>
+            <h3 class="font-bold text-base text-slate-900">Live Parking Lot Activity</h3>
+            <p class="text-xs text-slate-500">Real-time feed of vehicles entering and departing stalls.</p>
+          </div>
+          <button onclick="clearActivityLog()" class="text-xs text-slate-500 hover:text-slate-800 font-semibold">
+            Clear Feed
+          </button>
+        </div>
+
+        <div id="activityLogContainer" class="mt-4 space-y-2 max-h-72 overflow-y-auto pr-2 font-mono text-xs">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+    </div>
+
+    <!-- TAB 5: RATES, PASSES & KIOSK (Rupees) -->
+    <div id="tab-pricing" class="main-tab-content hidden space-y-6">
+      
+      <div class="text-center max-w-xl mx-auto">
+        <h2 class="text-2xl font-black text-slate-900 tracking-tight">Transparent Smart Parking Rates</h2>
+        <p class="text-xs text-slate-500 mt-1">
+          Dynamic AI-driven rates in Indian Rupees (₹) ensuring seamless parking, fast EV charging, and guaranteed pass reservations.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        <!-- Standard Hourly -->
+        <div class="bg-white border border-slate-200 rounded-3xl p-6 space-y-5 hover:border-slate-300 transition shadow-sm">
+          <div class="flex items-center justify-between">
+            <h3 class="font-bold text-lg text-slate-900">Hourly Dynamic</h3>
+            <span class="text-xs px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 font-mono font-bold">Casual</span>
+          </div>
+          <div>
+            <span class="text-3xl font-black text-slate-900 font-mono">₹50</span>
+            <span class="text-xs text-slate-500 font-medium"> / hour</span>
+          </div>
+          <ul class="text-xs text-slate-700 space-y-2.5 font-medium">
+            <li class="flex items-center space-x-2">
+              <span class="text-emerald-600 font-bold">✓</span>
+              <span>15-minute free grace period</span>
+            </li>
+            <li class="flex items-center space-x-2">
+              <span class="text-emerald-600 font-bold">✓</span>
+              <span>Automated FASTag / ANPR billing</span>
+            </li>
+            <li class="flex items-center space-x-2">
+              <span class="text-emerald-600 font-bold">✓</span>
+              <span>Instant WhatsApp & SMS digital receipt</span>
+            </li>
+          </ul>
+          <button onclick="openSmartBookingModal()" class="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold text-xs transition border border-slate-300">
+            Book Hourly (₹50)
+          </button>
+        </div>
+
+        <!-- Daily Unlimited / Business -->
+        <div class="bg-gradient-to-b from-cyan-50 via-white to-white border-2 border-cyan-500 rounded-3xl p-6 space-y-5 relative shadow-md">
+          <div class="absolute -top-3 right-6 bg-cyan-600 text-white font-black text-[10px] px-3 py-0.5 rounded-full uppercase tracking-wider shadow">
+            Most Popular
+          </div>
+          <div class="flex items-center justify-between">
+            <h3 class="font-bold text-lg text-slate-900">Full-Day Pass</h3>
+            <span class="text-xs px-2.5 py-0.5 rounded-full bg-cyan-100 text-cyan-800 font-mono font-bold">24 Hours</span>
+          </div>
+          <div>
+            <span class="text-3xl font-black text-slate-900 font-mono">₹350</span>
+            <span class="text-xs text-slate-500 font-medium"> / day</span>
+          </div>
+          <ul class="text-xs text-slate-700 space-y-2.5 font-medium">
+            <li class="flex items-center space-x-2">
+              <span class="text-cyan-700 font-bold">✓</span>
+              <span>Guaranteed reserved stall hold</span>
+            </li>
+            <li class="flex items-center space-x-2">
+              <span class="text-cyan-700 font-bold">✓</span>
+              <span>Unlimited in-and-out gate privileges</span>
+            </li>
+            <li class="flex items-center space-x-2">
+              <span class="text-cyan-700 font-bold">✓</span>
+              <span>Free 2-hour EV charging session included</span>
+            </li>
+          </ul>
+          <button onclick="openSmartBookingModal('day')" class="w-full py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-extrabold text-xs transition shadow-md shadow-cyan-600/20">
+            Get Daily Pass (₹350)
+          </button>
+        </div>
+
+        <!-- Monthly Resident / Corporate -->
+        <div class="bg-white border border-slate-200 rounded-3xl p-6 space-y-5 hover:border-slate-300 transition shadow-sm">
+          <div class="flex items-center justify-between">
+            <h3 class="font-bold text-lg text-slate-900">Monthly Subscription</h3>
+            <span class="text-xs px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 font-mono font-bold">Resident</span>
+          </div>
+          <div>
+            <span class="text-3xl font-black text-slate-900 font-mono">₹3,500</span>
+            <span class="text-xs text-slate-500 font-medium"> / month</span>
+          </div>
+          <ul class="text-xs text-slate-700 space-y-2.5 font-medium">
+            <li class="flex items-center space-x-2">
+              <span class="text-emerald-600 font-bold">✓</span>
+              <span>Dedicated numbered VIP stall</span>
+            </li>
+            <li class="flex items-center space-x-2">
+              <span class="text-emerald-600 font-bold">✓</span>
+              <span>RFID Windshield Tag & FASTag Integration</span>
+            </li>
+            <li class="flex items-center space-x-2">
+              <span class="text-emerald-600 font-bold">✓</span>
+              <span>25% discount on EV Fast Charging & Wash</span>
+            </li>
+          </ul>
+          <button onclick="openSmartBookingModal('month')" class="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold text-xs transition border border-slate-300">
+            Subscribe Monthly (₹3,500)
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- MODAL: SPOT TELEMETRY & ACTION MODAL (CLICK ON ANY STALL) -->
+  <div id="spotDetailsModal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-white border border-slate-200 rounded-3xl p-6 max-w-md w-full shadow-2xl relative animate-scaleUp text-slate-800">
+      <button onclick="closeSpotModal()" class="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-800 rounded-lg bg-slate-100">
+        ✕
+      </button>
+
+      <div class="flex items-start space-x-4">
+        <div id="modalSpotBadge" class="w-14 h-14 rounded-2xl flex items-center justify-center text-xl font-black font-mono shadow-sm">
+          A-01
+        </div>
+        <div>
+          <span id="modalSpotType" class="text-xs uppercase font-extrabold tracking-widest text-cyan-700">EV FAST CHARGER</span>
+          <h3 id="modalSpotTitle" class="text-xl font-black text-slate-900">Stall A-01</h3>
+          <p id="modalSpotLocation" class="text-xs text-slate-500 font-medium">Zone A • 12m from Main Lobby</p>
+        </div>
+      </div>
+
+      <!-- Real-Time Sensor Telemetry details in Rupees -->
+      <div class="mt-5 p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5 text-xs">
+        <div class="flex justify-between">
+          <span class="text-slate-500 font-semibold">Current Status:</span>
+          <strong id="modalSpotStatus" class="text-emerald-700 font-mono font-bold">AVAILABLE</strong>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-500 font-semibold">Rate:</span>
+          <span id="modalSpotRate" class="text-slate-900 font-mono font-bold">₹50 / hour</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-500 font-semibold">IoT Sensor Latency:</span>
+          <span id="modalSpotLatency" class="text-cyan-700 font-mono font-semibold">11ms (Mesh OK)</span>
+        </div>
+        <div id="modalVehicleInfoRow" class="hidden pt-2 border-t border-slate-200 flex justify-between">
+          <span class="text-slate-500 font-semibold">Parked Vehicle:</span>
+          <strong id="modalVehiclePlate" class="text-slate-900 font-mono">MH 02 CK 9021</strong>
+        </div>
+        <div id="modalDurationRow" class="hidden flex justify-between">
+          <span class="text-slate-500 font-semibold">Active Duration:</span>
+          <span id="modalActiveDuration" class="text-slate-700 font-mono">1h 14m</span>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div id="modalActions" class="mt-6 flex gap-3">
+        <!-- Dynamically swapped between Reserve / Release / Navigate -->
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: DIGITAL PARKING PASS / QR CODE TICKET (Rupees) -->
+  <div id="digitalTicketModal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-md hidden items-center justify-center p-4">
+    <div class="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-2xl relative text-center animate-scaleUp">
+      <button onclick="closeTicketModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 font-bold">
+        ✕
+      </button>
+
+      <div class="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold border border-emerald-300">
+        <span>✓</span>
+        <span>RESERVATION CONFIRMED</span>
+      </div>
+
+      <h3 class="text-xl font-black text-slate-900 mt-3">Smart Digital Parking Pass</h3>
+      <p class="text-xs text-slate-500 font-medium">Scan at Gate 1 ANPR reader or show on mobile</p>
+
+      <!-- Ticket Card Visual with Tear Lines (Crisp White Card) -->
+      <div class="mt-5 p-5 rounded-2xl bg-slate-50 border border-slate-200 text-left relative overflow-hidden shadow-inner">
+        
+        <!-- Pass ID & Brand -->
+        <div class="flex justify-between items-center text-xs pb-3 border-b border-slate-200">
+          <span class="font-extrabold text-slate-900 tracking-wider">ParkIQ MATRIX</span>
+          <span class="font-mono text-cyan-700 font-bold" id="ticketPassId">#PK-9842</span>
+        </div>
+
+        <!-- Assigned Spot Spotlight -->
+        <div class="py-4 text-center">
+          <span class="text-xs text-slate-500 block uppercase font-bold tracking-wider">Assigned Stall</span>
+          <span class="text-4xl font-black text-cyan-700 font-mono my-1 block" id="ticketSpotId">A-08</span>
+          <span class="text-xs text-slate-700 font-semibold" id="ticketFloorInfo">Ground Floor (Zone A)</span>
+        </div>
+
+        <!-- QR Code Canvas Container -->
+        <div class="flex flex-col items-center justify-center py-2">
+          <div class="p-2.5 bg-white rounded-xl shadow-md border border-slate-200">
+            <canvas id="ticketQrCanvas" width="130" height="130"></canvas>
+          </div>
+          <span class="text-[10px] text-slate-500 font-mono mt-2 tracking-widest font-bold" id="ticketBarcodeCode">ANPR-MH-02-CK-9021</span>
+        </div>
+
+        <!-- Details Grid -->
+        <div class="grid grid-cols-2 gap-2 pt-3 border-t border-slate-200 text-xs font-mono">
+          <div>
+            <span class="text-slate-400 text-[10px] block font-bold">PLATE</span>
+            <span class="text-slate-900 font-bold" id="ticketPlate">MH 02 CK 9021</span>
+          </div>
+          <div class="text-right">
+            <span class="text-slate-400 text-[10px] block font-bold">VALID UNTIL</span>
+            <span class="text-slate-900 font-bold" id="ticketValidUntil">22:00</span>
+          </div>
+        </div>
+
+        <!-- Access PIN -->
+        <div class="mt-3 bg-white p-2.5 rounded-lg border border-slate-200 flex justify-between items-center text-xs">
+          <span class="text-slate-600 font-semibold">Gate Access PIN:</span>
+          <strong class="text-amber-600 font-mono font-bold tracking-widest" id="ticketGatePin">*7291#</strong>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="mt-5 flex items-center justify-center gap-3">
+        <button onclick="printTicket()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold border border-slate-300">
+          🖨️ Print Pass
+        </button>
+        <button onclick="closeTicketModal(); switchMainTab('parking-lot');" class="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold shadow-md shadow-cyan-600/20">
+          View My Spot on Map
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION POPUP -->
+  <div id="toastNotification" class="fixed bottom-6 right-6 z-50 transform translate-y-24 opacity-0 transition-all duration-300 max-w-sm bg-white border border-slate-200 rounded-2xl p-4 shadow-xl flex items-center space-x-3 pointer-events-none text-slate-800">
+    <div id="toastIcon" class="text-2xl">🚗</div>
+    <div>
+      <h4 id="toastTitle" class="text-xs font-bold text-slate-900">Gate 1 Opened</h4>
+      <p id="toastMessage" class="text-[11px] text-slate-600">Vehicle directed to Stall.</p>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-200 bg-white mt-12 py-8 text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center space-x-2">
+        <div class="w-6 h-6 rounded-lg bg-cyan-600 flex items-center justify-center text-white font-bold text-xs">P</div>
+        <span class="text-slate-800 font-bold">ParkIQ Smart Parking System</span>
+        <span>• Autonomous Smart Parking Infrastructure</span>
+      </div>
+      <div>
+        <span>System Version 3.4.2 • Currency: INR (₹) • Powered by Edge MQTT</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
